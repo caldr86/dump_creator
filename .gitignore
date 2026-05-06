@@ -1,0 +1,10 @@
+.env
+*.cnf
+*.sql
+*.dump
+*.gz
+dump-output/
+tmp/
+.tmp/
+__pycache__/
+.pytest_cache/
