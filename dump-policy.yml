@@ -1,0 +1,122 @@
+target_max_size_gb: 5
+
+database_allowlist:
+  - ig_admin
+  - ig_betting
+  - ig_bonus
+  - ig_config
+  - ig_game
+  - ig_notify_audit
+  - ig_payment
+  - ig_product_owner
+  - ig_sportsbook
+  - ig_user
+  - ig_wallet
+
+partial_tables:
+  ig_wallet.Transaction:
+    pk: TransactionID
+    rows: 1500000
+  ig_betting.UserBetOutcomes:
+    pk: UserBetOutcomeID
+    rows: 2000000
+  ig_bonus.PocketWageringContribution:
+    pk: ContributionID
+    rows: 3000000
+  ig_bonus.BonusIssue:
+    pk: BonusIssueID
+    rows: 200000
+
+sanitize:
+  keep_key_patterns:
+    - ip
+    - ipaddress
+    - useragent
+    - user_agent
+    - device
+    - deviceid
+    - deviceinfo
+    - devicehash
+    - visitorid
+    - fingerprint
+  sensitive_key_patterns:
+    - email
+    - mail
+    - mobile
+    - phone
+    - password
+    - pass
+    - token
+    - session
+    - secret
+    - auth
+    - db_pass
+    - dbpass
+    - gatewaytoken
+    - first_name
+    - firstname
+    - firstName
+    - last_name
+    - lastname
+    - lastName
+    - dob
+    - dateofbirth
+    - birth
+
+  explicit_column_rules:
+    ig_admin.Admin.FirstName: first_name
+    ig_admin.Admin.LastName: last_name
+    ig_admin.Admin.Email: email
+    ig_admin.Admin.PhoneCode: phone_code
+    ig_admin.Admin.Mobile: phone
+    ig_admin.Admin.Password: password
+    ig_admin.Admin.AdminSessionToken: token
+    ig_admin.AdminLoginHistory.LoginToken: token
+    ig_admin.Tenants.db_pass: secret
+    ig_config.Tenants.FirstName: first_name
+    ig_config.Tenants.LastName: last_name
+    ig_config.Tenants.Email: email
+    ig_config.Tenants.Password: password
+    ig_config.Tenants.Mobile: phone
+    ig_product_owner.Tenants.DbPass: secret
+    ig_payment.PaymentGateway.GatewayToken: token
+    ig_user.Users.FirstName: first_name
+    ig_user.Users.LastName: last_name
+    ig_user.Users.PhoneCode: phone_code
+    ig_user.Users.Mobile: phone
+    ig_user.Users.Email: email
+    ig_user.Users.Password: password
+    ig_user.Users.DOB: dob
+    ig_user.LoginKey.AuthToken: token
+    ig_user.UserLoginHistory.LoginToken: token
+    ig_game.GameSessions.SessionToken: token
+    ig_wallet.Transaction.SessionTokenUsed: token
+    ig_bonus.FreeSpinAllocations.FirstName: first_name
+    ig_bonus.FreeSpinAllocations.LastName: last_name
+    ig_bonus.FreeSpinAllocations.DOB: dob
+    ig_bonus.FreeSpinAllocations.Email: email
+    ig_user.Enquiry.Email: email
+
+    ig_user.UserAddress.AddressLine1: address
+    ig_user.UserAddress.AddressLine2: address
+    ig_user.UserAddress.City: address
+    ig_user.UserAddress.StateName: address
+    ig_user.UserAddress.PostalCode: address
+    ig_user.UserDocument.NameOnDocument: full_name
+    ig_user.UserDocument.DocumentIdentifier: secret
+    ig_user.UserDocument.FrontImage: secret
+    ig_user.UserDocument.BackImage: secret
+    ig_user.UserDocument.CustomDataHash: secret
+    ig_user.UserDocument.NumberHash: secret
+    ig_user.UserDocument.RejectReason: text_sanitize
+    ig_user.Users.KycApplicantID: secret
+
+leak_checks:
+  email_regex: '(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b'
+  allow_email_domain: example.test
+  phone_regex: '(?<!\\d)(?:\\+?\\d[\\d\\s().-]{7,}\\d)(?!\\d)'
+  token_keywords:
+    - token
+    - secret
+    - password
+    - auth
