@@ -97,6 +97,20 @@ sanitize:
     ig_bonus.FreeSpinAllocations.Email: email
     ig_user.Enquiry.Email: email
 
+    ig_user.UserAddress.AddressLine1: address
+    ig_user.UserAddress.AddressLine2: address
+    ig_user.UserAddress.City: address
+    ig_user.UserAddress.StateName: address
+    ig_user.UserAddress.PostalCode: address
+    ig_user.UserDocument.NameOnDocument: full_name
+    ig_user.UserDocument.DocumentIdentifier: secret
+    ig_user.UserDocument.FrontImage: secret
+    ig_user.UserDocument.BackImage: secret
+    ig_user.UserDocument.CustomDataHash: secret
+    ig_user.UserDocument.NumberHash: secret
+    ig_user.UserDocument.RejectReason: text_sanitize
+    ig_user.Users.KycApplicantID: secret
+
 leak_checks:
   email_regex: '(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b'
   allow_email_domain: example.test

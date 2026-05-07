@@ -54,3 +54,7 @@ python scripts/build_agent_dump.py \
 - v0 streams remote dump directly into local MariaDB where possible.
 - Raw PII temporarily exists in the local staging DB **until sanitization completes**.
 - Final output is intended to contain sanitized data only.
+
+
+## Safety warning
+Use a **dedicated local MariaDB instance/container** for this process. The script can drop and recreate only allowlisted schemas when `--allow-destructive-local-recreate` is passed.

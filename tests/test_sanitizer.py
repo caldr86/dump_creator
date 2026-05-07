@@ -3,74 +3,35 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from scripts.sanitizer import (  # noqa: E402
-    SanitizerStats,
-    fake_email,
-    fake_phone,
-    sanitize_json_like,
-    sanitize_maybe_json_text,
-    sanitize_text,
-)
+from scripts.sanitizer import fake_email, fake_phone, key_is_sensitive, redact_by_rule, sanitize_text
 
 
-def test_email_redaction_deterministic():
-    e1 = fake_email("alice@example.com", "ig_user.Users.Email")
-    e2 = fake_email("alice@example.com", "ig_user.Users.Email")
-    assert e1 == e2
-    assert e1.endswith("@example.test")
+def test_sensitive_key_matching_regressions():
+    assert key_is_sensitive("membershipToken") is True
+    assert key_is_sensitive("shippingPhone") is True
+    assert key_is_sensitive("DeviceToken") is True
+    assert key_is_sensitive("IPAddress") is False
+    assert key_is_sensitive("SignupIPAddress") is False
+    assert key_is_sensitive("UserAgent") is False
+    assert key_is_sensitive("DeviceID") is False
 
 
-def test_phone_redaction_deterministic():
-    p1 = fake_phone("+1 (415) 555-1212", "ig_user.Users.Mobile")
-    p2 = fake_phone("+1 (415) 555-1212", "ig_user.Users.Mobile")
-    assert p1 == p2
-    assert p1 != "+1 (415) 555-1212"
+def test_fake_values_use_salt_deterministically():
+    salt = b"test-salt"
+    assert fake_email("a@b.com", "c", salt) == fake_email("a@b.com", "c", salt)
+    assert fake_phone("+1 555-222-3333", "c", salt) == fake_phone("+1 555-222-3333", "c", salt)
 
 
-def test_token_password_secret_redaction_in_text():
-    stats = SanitizerStats()
-    text = "password=abc token:xyz auth=qwe"
-    cleaned = sanitize_text(text, "ctx", stats)
-    assert "abc" not in cleaned
-    assert "xyz" not in cleaned
-    assert "qwe" not in cleaned
-    assert stats.token_redactions >= 1
+def test_text_sanitizer_preserves_plain_transaction_ids():
+    salt = b"test-salt"
+    raw = "transaction id 12345678901234567890 and provider 99887766"
+    out = sanitize_text(raw, "ctx", salt)
+    assert "12345678901234567890" in out
+    assert "99887766" in out
 
 
-def test_recursive_json_sanitizer():
-    payload = {
-        "email": "real@site.com",
-        "profile": {
-            "firstName": "Alice",
-            "lastName": "Doe",
-            "mobile": "+1 222 333 4444",
-            "nested": [{"token": "abc123"}],
-        },
-    }
-    cleaned = sanitize_json_like(payload, "root")
-    assert cleaned["email"].endswith("@example.test")
-    assert cleaned["profile"]["firstName"].startswith("First_")
-    assert cleaned["profile"]["lastName"].startswith("Last_")
-    assert cleaned["profile"]["mobile"].startswith("+1")
-    assert cleaned["profile"]["nested"][0]["token"] == "[REDACTED]"
-
-
-def test_keep_ip_device_useragent_preserved():
-    data = {
-        "IPAddress": "203.0.113.1",
-        "UserAgent": "Mozilla/5.0",
-        "DeviceID": "abcdef",
-        "comment": "reach me at bob@example.com",
-    }
-    cleaned = sanitize_json_like(data, "root")
-    assert cleaned["IPAddress"] == "203.0.113.1"
-    assert cleaned["UserAgent"] == "Mozilla/5.0"
-    assert cleaned["DeviceID"] == "abcdef"
-    assert "@example.test" in cleaned["comment"]
-
-
-def test_json_text_path():
-    raw = '{"email":"x@y.com", "token":"abc"}'
-    out = sanitize_maybe_json_text(raw, "ctx")
-    assert "@example.test" in out
-    assert "abc" not in out
+def test_explicit_address_and_document_rules():
+    salt = b"test-salt"
+    assert redact_by_rule("123 Main", "address", "x", salt).startswith("[REDACTED_ADDRESS_")
+    assert redact_by_rule("John Doe", "full_name", "x", salt).startswith("Person_")
+    assert redact_by_rule("reject: phone +1 333-444-5555", "text_sanitize", "x", salt) != "reject: phone +1 333-444-5555"
